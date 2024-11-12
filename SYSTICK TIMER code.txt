@@ -1,0 +1,63 @@
+
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdint.h>
+
+
+void systick_delay_ms(int);
+
+#define CLK_ENABLE (1U<<0)
+#define CLK_Source (1U<<2)
+#define CLK_Countflag (1U<<16)
+#define  systick_LoadValue 16000
+
+#define GPIOA_ENABLE  (1U<<0)
+#define pin9  (1U<<9)
+#define LED (1U<<9)
+
+
+
+volatile uint32_t *STCSR =(uint32_t *)0xe000e010;
+volatile uint32_t *STRVR =(uint32_t *)0xe000e014;
+volatile uint32_t *STCVR =(uint32_t *)0xe000e018;
+volatile uint32_t *STCR  =(uint32_t *)0xe000e01c;
+
+volatile uint32_t *AHB1ENR    =(uint32_t *)0x40023830;
+volatile uint32_t *GPIOMODER  =(uint32_t *)0x40020000;
+volatile uint32_t *GPIOAODR   =(uint32_t *)0x40020014;
+
+
+int main(void)
+{
+
+	 *AHB1ENR|=GPIOA_ENABLE;
+	 *GPIOMODER |=(1<<18);
+	 *GPIOMODER &=(~(1<<19));
+
+	 while(1)
+	 {
+		 *GPIOAODR^=LED;
+		 systick_delay_ms(1000);
+	 }
+}
+
+
+
+
+void systick_delay_ms(int delay)
+{
+	*STRVR |=systick_LoadValue;
+	*STCVR |=0;
+	*STCSR |=CLK_ENABLE;
+	*STCSR |=CLK_Source;
+
+	for(int i=0;i<delay;i++)
+	{
+		while((*STCSR&CLK_Countflag)==0);
+	}
+	*STCSR |=0;
+}
+
+
+
